@@ -243,6 +243,26 @@
 
       waitsForPromise(promise);
     });
+
+    it('should tolerate exceptions being thrown in the callback', function () {
+      var thisSpec = this, callbackError = new Error('Exception in eachAsync() callback');
+
+      function throwForOneRow(row) {
+        if (row.id === 2)
+          throw callbackError;
+
+        ids.push(row.id);
+      }
+
+      waitsForPromise(
+        db.eachAsync(
+          'SELECT * FROM Item ORDER BY id', throwForOneRow).then(function () {
+            thisSpec.fail('Promise did not fail as expected.');
+          }, function (error) {
+            expect(error).toEqual(callbackError);
+          })
+      );
+    });
   });
 
   describe('mapAsync()', function () {
