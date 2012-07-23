@@ -7,9 +7,11 @@
     return error.message;
   }
 
-  function waitsForPromise(promise) {
+  function waitsForPromise(promise, timeout) {
     var done = false;
-
+    if (!timeout) {
+      timeout = 5000;
+    }
     promise.then(function () {
       done = true;
     }, function (error) {
@@ -25,23 +27,29 @@
       done = true;
     });
 
-    waitsFor(function () { return done; });
+    waitsFor(function () { return done; }, null, timeout);
   }
 
   var db = null;
 
   beforeEach(function () {
+    var tempFolder = Windows.Storage.ApplicationData.current.temporaryFolder,
+              dbFilename = tempFolder.path + "\\testing.sqlite"; // ':memory:'
+    SQLite3.Database.enableSharedCache(true);
+
     waitsForPromise(
-      SQLite3JS.openAsync(':memory:').then(function (newDb) {
+      SQLite3JS.openAsync(dbFilename).then(function (newDb) {
         db = newDb;
-        return db.runAsync('CREATE TABLE Item (name TEXT, price REAL, dateBought UNSIGNED BIG INT, id INT PRIMARY KEY)').then(function () {
-          var promises = [
-            db.runAsync('INSERT INTO Item (name, price, id) VALUES (?, ?, ?)', ['Apple', 1.2, 1]),
-            db.runAsync('INSERT INTO Item (name, price, id) VALUES (?, ?, ?)', ['Orange', 2.5, 2]),
-            db.runAsync('INSERT INTO Item (name, price, id) VALUES (?, ?, ?)', ['Banana', 3, 3])
-          ];
-          return WinJS.Promise.join(promises);
-        });
+        var promises = [
+          db.runAsync('PRAGMA journal_mode = WAL'),
+          db.runAsync('PRAGMA synchronous = 1'),
+          db.runAsync('DROP TABLE IF EXISTS Item'),
+          db.runAsync('CREATE TABLE Item (name TEXT, price REAL, dateBought UNSIGNED BIG INT, id INT PRIMARY KEY)'),
+          db.runAsync('INSERT INTO Item (name, price, id) VALUES (?, ?, ?)', ['Apple', 1.2, 1]),
+          db.runAsync('INSERT INTO Item (name, price, id) VALUES (?, ?, ?)', ['Orange', 2.5, 2]),
+          db.runAsync('INSERT INTO Item (name, price, id) VALUES (?, ?, ?)', ['Banana', 3, 3])
+        ];
+        return WinJS.Promise.join(promises);
       })
     );
   });
@@ -288,6 +296,35 @@
           expect(id).toEqual(4);
         })
       );
+    });
+  });
+
+  describe('Unobserved exceptions', function() {
+    it('should support loads of concurrent promises', function() {
+      var promises1 = [], promises2 = [], joined1, joined2, errorMsgs = [];
+      for (var i = 0; i < 10000; i+=1) {
+        (function (num) {
+          var p = db.runAsync("INSERT INTO Item (name) VALUES ('Item " + num + "')").then(function () {
+            if (num == 9000) {
+              throw new WinJS.ErrorFromName("InvalidArgumentException", "Boohoo");
+            }
+          }, function (error) {
+            errorMsgs.push(error.message);
+          });
+          (num % 2 ? promises1 : promises2).push(p) ;
+        }).call(this, i);
+      }
+      joined1 = WinJS.Promise.join(promises1);
+      joined2 = WinJS.Promise.join(promises2);
+      thisSpec = this;
+      waitsForPromise(WinJS.Promise.join([joined2, joined1]).then(function() {
+        thisSpec.fail("It should have failed at statement 9000")
+      }, function (errors) {
+        expect(Object.keys(errors).length).toEqual(1);
+        expect(Object.keys(errors[0]).length).toEqual(1);
+        expect(errors[0][4500]).toBeTruthy();
+        expect(errors[0][4500].message).toEqual("Boohoo");
+      }), 50000);
     });
   });
 
