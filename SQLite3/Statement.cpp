@@ -27,13 +27,13 @@ namespace SQLite3 {
     sqlite3_finalize(statement);
   }
 
-  void Statement::Bind(const SafeParameterVector& params) {
-    for (SafeParameterVector::size_type i = 0; i < params.size(); ++i) {
-      BindParameter(i + 1, params[i]);
+  void Statement::Bind(SafeParameterVector^ params) {
+    for (unsigned int i = 0; i < params->Size; ++i) {
+      BindParameter(i + 1, params->GetAt(i));
     }
   }
-
-  void Statement::Bind(ParameterMap^ params) {
+ 
+ void Statement::Bind(ParameterMap^ params) {
     for (int i = 0; i < BindParameterCount(); ++i) {
       int index = i + 1;
       auto nameWithoutPrefix = BindParameterName(index).substr(1);

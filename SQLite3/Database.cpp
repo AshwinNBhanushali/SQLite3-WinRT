@@ -17,14 +17,12 @@ using Windows::UI::Core::DispatchedHandler;
 #endif
 
 namespace SQLite3 {
-  static SafeParameterVector CopyParameters(ParameterVector^ params) {
-    SafeParameterVector paramsCopy;
-
-    if (params) {
-      std::copy(begin(params), end(params), std::back_inserter(paramsCopy));
+  static Platform::Collections::Vector<Platform::Object^>^ CopyParameters(ParameterVector^ params) {
+    Platform::Collections::Vector<Platform::Object^>^ result = ref new Platform::Collections::Vector<Platform::Object^>();
+    for (auto it = begin(params); it < end(params); it++) {
+      result->Append(*it);
     }
-
-    return paramsCopy;
+    return result;
   }
 
   IAsyncOperation<Database^>^ Database::OpenAsync(Platform::String^ dbPath) {

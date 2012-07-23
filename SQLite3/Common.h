@@ -1,7 +1,7 @@
 #pragma once;
 
 #include <memory>
-#include <vector>
+#include <collection.h>
 
 namespace SQLite3 {
   ref class Database;
@@ -9,7 +9,7 @@ namespace SQLite3 {
   typedef std::unique_ptr<Statement> StatementPtr;
 
   typedef Windows::Foundation::Collections::IVectorView<Platform::Object^> ParameterVector;
-  typedef std::vector<Platform::Object^> SafeParameterVector;
+  typedef Platform::Collections::Vector<Platform::Object^> SafeParameterVector;
 
   typedef Windows::Foundation::Collections::PropertySet ParameterMap;
 
