@@ -87,7 +87,15 @@ namespace SQLite3 {
       break;
     }
     if (handler) {
-      dispatcher->RunAsync(CoreDispatcherPriority::Normal, handler);
+      Concurrency::task<void> runHandlerTask(dispatcher->RunAsync(CoreDispatcherPriority::Normal, handler));
+      runHandlerTask.then([](Concurrency::task<void> antecedent) {
+        try {
+          antecedent.get();
+        } catch (Platform::Exception^ e) {
+          OutputDebugStringW(e->Message->Data());
+        }
+      });
+      
     }
   }
 
