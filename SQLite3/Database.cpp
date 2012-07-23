@@ -10,6 +10,12 @@ using Windows::UI::Core::CoreDispatcherPriority;
 using Windows::UI::Core::CoreWindow;
 using Windows::UI::Core::DispatchedHandler;
 
+#ifdef _DEBUG
+#define DEBUG_TRACE(msg, sql) OutputDebugStringW(msg); OutputDebugStringW(sql->Data()); OutputDebugStringW(L"\n");
+#else
+#define DEBUG_TRACE(msg, sql)
+#endif
+
 namespace SQLite3 {
   static SafeParameterVector CopyParameters(ParameterVector^ params) {
     SafeParameterVector paramsCopy;
@@ -97,8 +103,10 @@ namespace SQLite3 {
 
   template <typename ParameterContainer>
   IAsyncAction^ Database::RunAsync(Platform::String^ sql, ParameterContainer params) {
+    DEBUG_TRACE(L"Entering RunAsync: ", sql);
     return Concurrency::create_async([this, sql, params]() -> void {
       try {
+        DEBUG_TRACE(L"Running RunAsync: ", sql);
         Concurrency::critical_section::scoped_lock scopedLock(criticalSection);
         StatementPtr statement = PrepareAndBind(sql, params);
         statement->Run();
@@ -119,8 +127,10 @@ namespace SQLite3 {
 
   template <typename ParameterContainer>
   IAsyncOperation<Platform::String^>^ Database::OneAsync(Platform::String^ sql, ParameterContainer params) {
+    DEBUG_TRACE(L"Entering OneAsync: ", sql);
     return Concurrency::create_async([this, sql, params]() -> Platform::String^ {
       try {
+        DEBUG_TRACE(L"Running OneAsync: ", sql);
         Concurrency::critical_section::scoped_lock scopedLock(criticalSection);
         StatementPtr statement = PrepareAndBind(sql, params);
         return statement->One();
@@ -141,8 +151,10 @@ namespace SQLite3 {
 
   template <typename ParameterContainer>
   IAsyncOperation<Platform::String^>^ Database::AllAsync(Platform::String^ sql, ParameterContainer params) {
+    DEBUG_TRACE(L"Entering AllAsync: ", sql);
     return Concurrency::create_async([this, sql, params]() -> Platform::String^ {
       try {
+        DEBUG_TRACE(L"Running AllAsync: ", sql);
         Concurrency::critical_section::scoped_lock scopedLock(criticalSection);
         StatementPtr statement = PrepareAndBind(sql, params);
         return statement->All();
@@ -164,7 +176,9 @@ namespace SQLite3 {
   template <typename ParameterContainer>
   IAsyncAction^ Database::EachAsync(Platform::String^ sql, ParameterContainer params, EachCallback^ callback) {
     return Concurrency::create_async([this, sql, params, callback]() -> void {
+    DEBUG_TRACE(L"Entering EachAsync: ", sql);
       try {
+        DEBUG_TRACE(L"Running EachAsync: ", sql);
         Concurrency::critical_section::scoped_lock scopedLock(criticalSection);
         StatementPtr statement = PrepareAndBind(sql, params);
         statement->Each(callback, dispatcher);
