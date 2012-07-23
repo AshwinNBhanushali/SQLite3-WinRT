@@ -82,12 +82,16 @@
   }
 
   function wrapException(exception) {
-    var error, resultCode;
+    var error, message, resultCode;
 
     if (exception.hasOwnProperty('number')) {
+      message = 'SQLite Error (' + resultCode + ')';
+      if (this && this.getLastError) {
+        message += ' - ' + this.getLastError();
+      }
       resultCode = exception.number & 0xffff;
       error = {
-        message: 'SQLite Error (Result Code ' + resultCode + ')',
+        message: message,
         resultCode: resultCode
       };
     } else {
@@ -98,7 +102,7 @@
   }
 
   function wrapDatabase(connection) {
-    var that, queue = new PromiseQueue();
+    var that, queue = new PromiseQueue(), exceptionHandler = wrapException.bind(connection);
 
     function callNativeAsync(funcName, sql, args, callback) {
       return queue.append(function () {
@@ -114,17 +118,17 @@
       runAsync: function (sql, args) {
         return callNativeAsync('runAsync', sql, args).then(function () {
           return that;
-        }, wrapException);
+        }, exceptionHandler);
       },
       oneAsync: function (sql, args) {
         return callNativeAsync('oneAsync', sql, args).then(function (row) {
           return row ? JSON.parse(row) : null;
-        }, wrapException);
+        }, exceptionHandler);
       },
       allAsync: function (sql, args) {
         return callNativeAsync('allAsync', sql, args).then(function (rows) {
           return rows ? JSON.parse(rows) : null;
-        }, wrapException);
+        }, exceptionHandler);
       },
       eachAsync: function (sql, args, callback) {
         if (!callback && typeof args === 'function') {
@@ -136,7 +140,7 @@
           callback(JSON.parse(row));
         }).then(function () {
           return that;
-        }, wrapException);
+        }, exceptionHandler);
       },
       mapAsync: function (sql, args, callback) {
         if (!callback && typeof args === 'function') {
