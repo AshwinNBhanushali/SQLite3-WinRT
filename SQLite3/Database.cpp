@@ -1,5 +1,6 @@
 #include <collection.h>
 #include <ppltasks.h>
+#include <concrt.h>
 
 #include "Database.h"
 #include "Statement.h"
@@ -98,6 +99,7 @@ namespace SQLite3 {
   IAsyncAction^ Database::RunAsync(Platform::String^ sql, ParameterContainer params) {
     return Concurrency::create_async([this, sql, params]() -> void {
       try {
+        Concurrency::critical_section::scoped_lock scopedLock(criticalSection);
         StatementPtr statement = PrepareAndBind(sql, params);
         statement->Run();
       } catch (Platform::Exception^ e) {
@@ -119,6 +121,7 @@ namespace SQLite3 {
   IAsyncOperation<Platform::String^>^ Database::OneAsync(Platform::String^ sql, ParameterContainer params) {
     return Concurrency::create_async([this, sql, params]() -> Platform::String^ {
       try {
+        Concurrency::critical_section::scoped_lock scopedLock(criticalSection);
         StatementPtr statement = PrepareAndBind(sql, params);
         return statement->One();
       } catch (Platform::Exception^ e) {
@@ -140,6 +143,7 @@ namespace SQLite3 {
   IAsyncOperation<Platform::String^>^ Database::AllAsync(Platform::String^ sql, ParameterContainer params) {
     return Concurrency::create_async([this, sql, params]() -> Platform::String^ {
       try {
+        Concurrency::critical_section::scoped_lock scopedLock(criticalSection);
         StatementPtr statement = PrepareAndBind(sql, params);
         return statement->All();
       } catch (Platform::Exception^ e) {
@@ -161,6 +165,7 @@ namespace SQLite3 {
   IAsyncAction^ Database::EachAsync(Platform::String^ sql, ParameterContainer params, EachCallback^ callback) {
     return Concurrency::create_async([this, sql, params, callback]() -> void {
       try {
+        Concurrency::critical_section::scoped_lock scopedLock(criticalSection);
         StatementPtr statement = PrepareAndBind(sql, params);
         statement->Each(callback, dispatcher);
       } catch (Platform::Exception^ e) {

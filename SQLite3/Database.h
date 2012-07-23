@@ -54,6 +54,7 @@ namespace SQLite3 {
     void OnChange(int action, char const* dbName, char const* tableName, sqlite3_int64 rowId);
 
     Windows::UI::Core::CoreDispatcher^ dispatcher;
+    Concurrency::critical_section criticalSection;
     sqlite3* sqlite;
     std::wstring lastErrorMsg;
   };
