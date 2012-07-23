@@ -136,8 +136,15 @@
           args = undefined;
         }
 
-        return callNativeAsync('eachAsync', sql, args, function (row) {
-          callback(JSON.parse(row));
+        return callNativeAsync('allAsync', sql, args).then(function (rows) {
+          var data;
+          if (!rows) {
+            return;
+          }
+          data = JSON.parse(rows);
+          data.forEach(function (row) {
+            callback(row);
+          });
         }).then(function () {
           return that;
         }, exceptionHandler);
