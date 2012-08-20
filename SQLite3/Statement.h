@@ -5,6 +5,8 @@
 
 namespace SQLite3 {
   class Statement {
+    friend void notifyUnlock(void* args[], int nArgs);
+
   public:
     static StatementPtr Prepare(sqlite3* sqlite, Platform::String^ sql);
     ~Statement();
