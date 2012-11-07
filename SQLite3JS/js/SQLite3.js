@@ -110,24 +110,26 @@
     var that;
 
     function callNativeAsync(funcName, sql, args, callback) {
-      var argString, preparedArgs, fullFuncName;
+      return WinJS.Promise.timeout().then(function () {
+        var argString, preparedArgs, fullFuncName;
 
-      if (SQLite3JS.debug) {
-        argString = args ? ' ' + args.toString() : '';
-        SQLite3JS.log('Database#' + funcName + ': ' + sql + argString);
-      }
+        if (SQLite3JS.debug) {
+          argString = args ? ' ' + args.toString() : '';
+          SQLite3JS.log('Database#' + funcName + ': ' + sql + argString);
+        }
 
-      preparedArgs = prepareArgs(args);
-      fullFuncName =
-        preparedArgs instanceof Windows.Foundation.Collections.PropertySet
-        ? funcName + "Map"
-        : funcName + "Vector";
+        preparedArgs = prepareArgs(args);
+        fullFuncName =
+          preparedArgs instanceof Windows.Foundation.Collections.PropertySet
+          ? funcName + "Map"
+          : funcName + "Vector";
 
-      try {
-        return WinJS.Promise.wrap(connection[fullFuncName](sql, preparedArgs, callback));
-      } catch (error) {
-        return wrapException(error, that.getLastError());
-      }
+        try {
+          return connection[fullFuncName](sql, preparedArgs, callback);
+        } catch (error) {
+          return wrapException(error, that.getLastError());
+        }
+      });
     }
 
     that = {
@@ -344,12 +346,13 @@
   );
 
   SQLite3JS.openAsync = function (dbPath) {
-    try {
-      var db = wrapDatabase(SQLite3.Database.open(dbPath));
-      return WinJS.Promise.wrap(db);
-    } catch (error) {
-      return wrapException(error);
-    }
+    return WinJS.Promise.timeout().then(function () {
+      try {
+        return wrapDatabase(SQLite3.Database.open(dbPath));
+      } catch (error) {
+        return wrapException(error);
+      }
+    });
   };
 
   return SQLite3JS;
