@@ -180,7 +180,7 @@
         );
       });
 
-    xit('should allow cancellation', function () {
+    it('should allow cancellation', function () {
       var promise, thisSpec = this;
 
         promise = db.allAsync('SELECT * FROM Item ORDER BY id').then(function () {
@@ -231,7 +231,7 @@
         );
       });
 
-    xit('should allow cancellation in the callback', function () {
+    it('should allow cancellation in the callback', function () {
       var promise, thisSpec = this;
 
         function cancel(row) {
